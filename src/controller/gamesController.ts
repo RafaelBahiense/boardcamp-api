@@ -17,18 +17,19 @@ export async function getGames(req: Request, res: Response) {
 }
 
 export async function postGames(req: Request, res: Response) {
+    console.log(stripHtml(req.body.name).result)
     const game = {
         name: stripHtml(req.body.name).result,
-        image: stripHtml(req.body.name).result,
-        stockTotal: (stripHtml(req.body.name).result as unknown) as number,
-        categoryId: (stripHtml(req.body.name).result as unknown) as number,
-        pricePerDay: (stripHtml(req.body.name).result as unknown) as number
+        image: stripHtml(req.body.image).result,
+        stockTotal: (req.body.stockTotal as unknown) as number,
+        categoryId: (req.body.categoryId as unknown) as number,
+        pricePerDay: (req.body.pricePerDay as unknown) as number
     }
     try {
         await gameSchema.validateAsync(game);
-        const existentGame = await connectionDB.query("SELECT * FROM games WHERE name = $1", [game]);
+        const existentGame = await connectionDB.query("SELECT * FROM games WHERE name = $1", [game.name]);
         if(existentGame.rowCount > 0) throw new CustomError("existent");
-        await connectionDB.query("INSERT INTO games (name,image,stockTotal,categoryId,pricePerDay) VALUES ($1,$2,$3,$4,$5)", [game.name, game.image, game.stockTotal, game.categoryId, game.pricePerDay]);
+        await connectionDB.query(`INSERT INTO games (name,image,"stockTotal","categoryId","pricePerDay") VALUES ($1,$2,$3,$4,$5)`, [game.name, game.image, game.stockTotal, game.categoryId, game.pricePerDay]);
         res.sendStatus(201);
     } catch (e) {
         console.log(e);
