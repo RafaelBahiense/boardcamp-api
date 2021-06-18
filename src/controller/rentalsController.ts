@@ -28,8 +28,11 @@ export async function postRentals(req: Request, res: Response) {
     }
     try {
         await rentalSchema.validateAsync(rental);
-        const gameAndCustomer = await connectionDB.query(`SELECT customers.id AS "customerId", games.id AS "gameId", games."pricePerDay" FROM customers JOIN games ON games.id=$1 AND customers.id=$2`, [rental.gameId, rental.customerId])
+        const gameAndCustomer = await connectionDB.query(`SELECT customers.id AS "customerId", games.id AS "gameId", games."pricePerDay", games."stockTotal" FROM customers JOIN games ON games.id=$1 AND customers.id=$2`, [rental.gameId, rental.customerId])
         if(gameAndCustomer.rowCount === 0) throw new CustomError("No customer or game");
+        const alreadyRent = await connectionDB.query(`SELECT * FROM rentals WHERE "gameId"=$1`, [rental.gameId]);
+        if(gameAndCustomer.rows[0].stockTotal <= alreadyRent.rowCount) throw new CustomError("finished");
+        console.log(gameAndCustomer.rows[0].stockTotal, alreadyRent.rowCount)
         rental.originalPrice = rental.daysRented * gameAndCustomer.rows[0].pricePerDay;
         const rentals = await connectionDB.query(`INSERT INTO rentals ("customerId","gameId", "daysRented","rentDate","delayFee","originalPrice") VALUES ($1,$2,$3,$4,$5,$6)`, [rental.customerId, rental.gameId, rental.daysRented, rental.rentDate, rental.delayFee, rental.originalPrice]);
         res.sendStatus(201)
