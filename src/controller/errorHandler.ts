@@ -17,6 +17,8 @@ export default function errorHandler(error: CustomError, res: Response) {
         case 'number.min':
         case "date.base":
         case "DateTimeParseError":
+        case "No customer or game":
+        case "finished":
             res.sendStatus(400);
             break;
         case "not found":
