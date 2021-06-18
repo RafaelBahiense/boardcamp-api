@@ -4,20 +4,22 @@ import { stripHtml } from "string-strip-html";
 import {gameSchema} from "../schemas/schemas";
 import {connectionDB} from "../config/database";
 import {CustomError} from "./types";
+import errorHandler from "./errorHandler";
 
 
 export async function getGames(req: Request, res: Response) {
     try {
-        const games = await connectionDB.query("SELECT * FROM games");
+        const nameContains = req.query.name as string || "";
+        const games = nameContains 
+            ? await connectionDB.query(`SELECT * FROM games WHERE name ILIKE $1||'%'`, [nameContains])
+            : await connectionDB.query(`SELECT * FROM games`)
         res.status(200).send(games.rows)
-    } catch (error) {
-        console.log(error);
-        res.sendStatus(500);
+    } catch (e) {
+        errorHandler(e, res);
     }
 }
 
 export async function postGames(req: Request, res: Response) {
-    console.log(stripHtml(req.body.name).result)
     const game = {
         name: stripHtml(req.body.name).result,
         image: stripHtml(req.body.image).result,
@@ -34,20 +36,6 @@ export async function postGames(req: Request, res: Response) {
         await connectionDB.query(`INSERT INTO games (name,image,"stockTotal","categoryId","pricePerDay") VALUES ($1,$2,$3,$4,$5)`, [game.name, game.image, game.stockTotal, game.categoryId, game.pricePerDay]);
         res.sendStatus(201);
     } catch (e) {
-        console.log(e);
-        switch (e.details[0].type) {
-            case "no such category":
-            case 'any.required':
-            case 'any.required':
-            case "string.empty":
-                res.sendStatus(400);
-                break;
-            case "existent":
-                res.sendStatus(409);
-                break;
-            default:
-                res.sendStatus(500);
-                break;
-        }
+        errorHandler(e, res);
     }
 }

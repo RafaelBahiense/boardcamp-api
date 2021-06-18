@@ -4,15 +4,15 @@ import { stripHtml } from "string-strip-html";
 import {categorySchema} from "../schemas/schemas";
 import {connectionDB} from "../config/database";
 import {CustomError} from "./types";
+import errorHandler from "./errorHandler";
 
 
-export async function getCategories(req: Request, res: Response) {
+export async function getCategories(_: Request, res: Response) {
     try {
         const categories = await connectionDB.query("SELECT * FROM categories");
         res.status(200).send(categories.rows)
-    } catch (error) {
-        console.log(error);
-        res.sendStatus(500);
+    } catch (e) {
+        errorHandler(e, res);
     }
 }
 
@@ -25,17 +25,6 @@ export async function postCategories(req: Request, res: Response) {
         await connectionDB.query("INSERT INTO categories (name) VALUES ($1)", [categoryName]);
         res.sendStatus(201);
     } catch (e) {
-        console.log(e);
-        switch (e.details[0].type) {
-            case "string.empty":
-                res.sendStatus(400);
-                break;
-            case "existent":
-                res.sendStatus(409);
-                break;
-            default:
-                res.sendStatus(500);
-                break;
-        }
+        errorHandler(e, res);
     }
 }
