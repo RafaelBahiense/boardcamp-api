@@ -23,3 +23,19 @@ export const customersSchema = Joi.object({
 
     birthday: Joi.date().required()
 })
+
+export const rentalSchema = Joi.object({
+  customerId: Joi.number().min(0).required(),
+
+  gameId: Joi.number().min(0).required(),
+
+  daysRented: Joi.number().min(1).required(),
+
+  rentDate: Joi.date().required(),
+  
+  returnDate: Joi.alternatives().try(Joi.date().required(),null),
+  
+  delayFee: Joi.alternatives().try(Joi.number().min(0).required(),null),
+
+  originalPrice: Joi.alternatives().try(Joi.number().min(0).required(),null),
+})
