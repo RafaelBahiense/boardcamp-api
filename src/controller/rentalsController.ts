@@ -5,13 +5,24 @@ import {rentalSchema} from "../schemas/schemas";
 import {connectionDB} from "../config/database";
 import {CustomError} from "./types";
 import errorHandler from "./errorHandler";
+import { QueryResult } from "pg";
 
 
-export async function getRentals(_: Request, res: Response) {
+export async function getRentals(req: Request, res: Response) {
     try {
-        const rentals = await connectionDB.query(`SELECT * FROM rentals`);
+        const customerId = req.query.customerId as string || "";
+        const gameId = req.query.gameId as string || "";
+        let rentals: QueryResult;
+        if(customerId) {
+            rentals = await connectionDB.query(`SELECT * FROM rentals WHERE "customerId" LIKE $1||'%'`, [customerId]);
+        } else if (gameId) {
+            rentals = await connectionDB.query(`SELECT * FROM rentals WHERE "gameId" LIKE $1||'%'`, [gameId]);
+        } else {
+            rentals = await connectionDB.query(`SELECT * FROM rentals`);
+        }
         res.status(200).send(rentals.rows)
     } catch (e) {
+        console.log(e);
         errorHandler(e, res);
     }
 }
